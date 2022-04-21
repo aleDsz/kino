@@ -16,7 +16,17 @@ defmodule Kino.MixProject do
       deps: deps(),
       docs: docs(),
       package: package(),
-      xref: [exclude: [VegaLite, Ecto.Query, Ecto.Queryable, DBConnection]]
+      xref: [
+        exclude: [
+          VegaLite,
+          Ecto.Query,
+          Ecto.Queryable,
+          DBConnection,
+          JOSE.JWK,
+          JOSE.JWS,
+          JOSE.JWT
+        ]
+      ]
     ]
   end
 
