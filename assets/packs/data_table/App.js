@@ -121,8 +121,8 @@ export function App({ ctx, data }) {
   const [menu, setMenu] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [selection, setSelection] = useState(emptySelection);
-  const [rowMarkerOffset, setRowMarkerOffset] = useState(0);
   const [hoverRows, setHoverRows] = useState(null);
+  const [selectedRowIndex, setSelectedRowIndex] = useState(undefined);
 
   const hasData = content.columns.length !== 0;
   const totalRows = content.total_rows;
@@ -139,7 +139,6 @@ export function App({ ctx, data }) {
   const headerHeight = headerTitleSize + headerItems * 22;
   const fixedHeight = 440 + headerHeight;
   const height = totalRows >= 10 && infiniteScroll ? fixedHeight : null;
-  const rowMarkerStartIndex = (content.page - 1) * content.limit + 1;
   const minColumnWidth = hasSummaries ? 150 : 50;
   const maxColumnWidth = 1200;
   const maxColumnAutoWidth = data.content.columns.length === 1 ? 800 : 350;
@@ -396,11 +395,27 @@ export function App({ ctx, data }) {
     [hoverRows],
   );
 
+  const onGridSelectionChange = useCallback(
+    (selection) => {
+      setSelection(selection);
+
+      if (selection.current === undefined) {
+        const index = selection.rows?.first();
+        setSelectedRowIndex(index);
+      }
+    },
+    [selection],
+  );
+
+  const onSelectionCleared = useCallback(() => {
+    setSelectedRowIndex(undefined);
+  }, []);
+
   useEffect(() => {
-    selection.rows?.items.length > 0
-      ? setRowMarkerOffset(1)
-      : setRowMarkerOffset(0);
-  }, [selection]);
+    if (selectedRowIndex !== null) {
+      ctx.pushEvent("select_index", { index: selectedRowIndex });
+    }
+  }, [selectedRowIndex]);
 
   useEffect(() => {
     ctx.handleEvent("update_content", (content) => {
@@ -491,7 +506,6 @@ export function App({ ctx, data }) {
           drawHeader={drawHeader}
           verticalBorder={false}
           rowMarkers="clickable-number"
-          rowMarkerWidth={32}
           onHeaderMenuClick={onHeaderMenuClick}
           onHeaderClicked={onHeaderClicked}
           showSearch={showSearch}
@@ -503,10 +517,11 @@ export function App({ ctx, data }) {
           smoothScrollX={true}
           smoothScrollY={true}
           onColumnResize={onColumnResize}
+          rowSelect="single"
           columnSelect="none"
           gridSelection={selection}
-          onGridSelectionChange={(selection) => setSelection(selection)}
-          rowMarkerStartIndex={rowMarkerStartIndex}
+          onGridSelectionChange={onGridSelectionChange}
+          onSelectionCleared={onSelectionCleared}
           minColumnWidth={minColumnWidth}
           maxColumnWidth={maxColumnWidth}
           maxColumnAutoWidth={maxColumnAutoWidth}

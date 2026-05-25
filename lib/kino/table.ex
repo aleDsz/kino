@@ -6,10 +6,14 @@ defmodule Kino.Table do
   fetching and traversal to the behaviour implementation.
   """
 
+  @type feature :: :export | :refetch | :pagination | :sorting | :relocate | :actions
+  @type action :: %{action: atom(), label: String.t(), callback: (term() -> any())}
+
   @type info :: %{
           :name => String.t(),
-          :features => list(:export | :refetch | :pagination | :sorting | :relocate),
+          :features => list(feature()),
           optional(:export) => %{formats: list(String.t())},
+          optional(:actions) => list(action()),
           optional(:num_rows) => pos_integer()
         }
 
@@ -129,7 +133,8 @@ defmodule Kino.Table do
        page: 1,
        limit: info[:num_rows] || @limit,
        order: nil,
-       relocates: []
+       relocates: [],
+       actions: []
      )}
   end
 
@@ -191,6 +196,17 @@ defmodule Kino.Table do
   def handle_event("relocate", %{"from_index" => from_index, "to_index" => to_index}, ctx) do
     relocates = ctx.assigns.relocates ++ [%{from_index: from_index, to_index: to_index}]
     {:noreply, ctx |> assign(relocates: relocates) |> broadcast_update()}
+  end
+
+  def handle_event("select_index", params, ctx) do
+    item =
+      if index = params["current_index"] do
+        Enum.at(ctx.assigns.state.data_rows, index)
+      end
+
+    emit_event(ctx, item)
+
+    {:noreply, ctx}
   end
 
   @impl true

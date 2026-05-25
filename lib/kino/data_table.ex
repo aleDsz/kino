@@ -59,11 +59,13 @@ defmodule Kino.DataTable do
     sorting_enabled = Keyword.get(opts, :sorting_enabled, true)
     formatter = Keyword.get(opts, :formatter)
     num_rows = Keyword.get(opts, :num_rows)
+    actions = Keyword.get(opts, :actions, [])
     {data_rows, data_columns, count, inspected} = prepare_data(tabular, opts)
 
     Kino.Table.new(
       __MODULE__,
-      {data_rows, data_columns, count, name, sorting_enabled, inspected, formatter, num_rows},
+      {data_rows, data_columns, count, name, sorting_enabled, inspected, formatter, num_rows,
+       actions},
       export: fn state -> {"text", state.inspected} end
     )
   end
@@ -176,9 +178,16 @@ defmodule Kino.DataTable do
 
   @impl true
   def init(
-        {data_rows, data_columns, count, name, sorting_enabled, inspected, formatter, num_rows}
+        {data_rows, data_columns, count, name, sorting_enabled, inspected, formatter, num_rows,
+         actions}
       ) do
-    features = Kino.Utils.truthy_keys(pagination: true, sorting: sorting_enabled)
+    features =
+      Kino.Utils.truthy_keys(
+        pagination: true,
+        sorting: sorting_enabled,
+        actions: Enum.count(actions) > 0
+      )
+
     info = %{name: name, features: features}
     info = if(num_rows, do: Map.put(info, :num_rows, num_rows), else: info)
 
